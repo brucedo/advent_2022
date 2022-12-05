@@ -1,14 +1,35 @@
 
 pub mod lib;
 pub mod day1;
+pub mod day2;
 
+
+use day2::advent::evaluate_tournament;
 
 use crate::day1::advent::{count_max_calories, sum_top_three_calories};
+use crate::day2::advent::evaluate_tournament_the_second;
 use crate::lib::lib::to_lines;
 
 fn main() 
 {
-    advent_day_1();
+    // advent_day_1();
+    advent_day_2();
+}
+
+pub fn advent_day_2()
+{
+    if let Ok(input_data) = std::fs::read_to_string("./advent_day_2_1_test")
+    {
+        let lines = to_lines(&input_data);
+        let score = evaluate_tournament(&lines);
+        let score_the_second = evaluate_tournament_the_second(&lines);
+        println!("Total score: {}", score);
+        println!("Revised score: {}", score_the_second);
+    }
+    else
+    {
+        panic!("You're missing the file, you dullard.");
+    }
 }
 
 pub fn advent_day_1()
