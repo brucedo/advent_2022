@@ -2,9 +2,10 @@
 pub mod lib;
 pub mod day1;
 pub mod day2;
-
+pub mod day3;
 
 use day2::advent::evaluate_tournament;
+use day3::advent::analyze_rucksacks;
 
 use crate::day1::advent::{count_max_calories, sum_top_three_calories};
 use crate::day2::advent::evaluate_tournament_the_second;
@@ -13,7 +14,30 @@ use crate::lib::lib::to_lines;
 fn main() 
 {
     // advent_day_1();
-    advent_day_2();
+    // advent_day_2();
+    advent_day_3()
+}
+
+pub fn advent_day_3()
+{
+    env_logger::init();
+    let input_data = read_file_to_str("./advent_day_3_1_real");
+    let lines = to_lines(&input_data);
+    let priority = analyze_rucksacks(lines);
+
+    println!("The total priority of the dataset is {}", priority);
+}
+
+fn read_file_to_str(path: &str) -> String
+{
+    if let Ok(input_data) = std::fs::read_to_string(path)
+    {
+        return input_data;
+    }
+    else
+    {
+        panic!("There is no file here named {}, you goon.", path);
+    }
 }
 
 pub fn advent_day_2()
