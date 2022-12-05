@@ -3,7 +3,7 @@ use crate::lib::lib::find_max;
 
 pub fn count_max_calories(calory_list: Vec<&str>) -> Option<u64>
 {
-    let mut per_elf = parse_into_vec(calory_list);
+    let per_elf = parse_into_vec(calory_list);
 
     if let Some(max) = find_max(&per_elf)
     {

@@ -1,6 +1,5 @@
 pub mod lib
 {
-    use std::{fs::File, cmp::Ordering};
 
     pub fn find_max<T>(list: &Vec<T>) -> Option<&T>
     where T: PartialEq + PartialOrd
@@ -39,42 +38,49 @@ pub mod lib
 
 
     #[cfg(test)]
-
-    #[test]
-    pub fn to_lines_produces_empty_strings_when_input_string_is_all_newlines()
+    mod test
     {
-        let input = "\n\n\n\n\n\n\n\n\n\n\n\n";
+        use std::cmp::Ordering;
 
-        let lines = to_lines(input);
+        use crate::lib::lib::to_lines;
 
-        assert_eq!(lines.len(), 13);
-        for line in lines
+
+        #[test]
+        pub fn to_lines_produces_empty_strings_when_input_string_is_all_newlines()
         {
-            assert_eq!(line.len(), 0);
+            let input = "\n\n\n\n\n\n\n\n\n\n\n\n";
+
+            let lines = to_lines(input);
+
+            assert_eq!(lines.len(), 13);
+            for line in lines
+            {
+                assert_eq!(line.len(), 0);
+            }
         }
-    }
 
-    #[test]
-    pub fn to_lines_counts_both_unix_and_windows_newlines()
-    {
-        let input = "\n\r\n\n\r\n\n\r\n";
-        let lines = to_lines(input);
-
-        assert_eq!(lines.len(), 7);
-        for line in lines
+        #[test]
+        pub fn to_lines_counts_both_unix_and_windows_newlines()
         {
-            assert_eq!(line.len(), 0);
+            let input = "\n\r\n\n\r\n\n\r\n";
+            let lines = to_lines(input);
+
+            assert_eq!(lines.len(), 7);
+            for line in lines
+            {
+                assert_eq!(line.len(), 0);
+            }
         }
-    }
 
-    #[test]
-    pub fn to_lines_produces_one_line_when_no_newline_characters_are_present()
-    {
-        let input = "this is a test";
+        #[test]
+        pub fn to_lines_produces_one_line_when_no_newline_characters_are_present()
+        {
+            let input = "this is a test";
 
-        let lines = to_lines(input);
-        
-        assert_eq!(lines.len(), 1);
-        assert_eq!(lines.get(0).unwrap().cmp(&input), Ordering::Equal);
+            let lines = to_lines(input);
+            
+            assert_eq!(lines.len(), 1);
+            assert_eq!(lines.get(0).unwrap().cmp(&input), Ordering::Equal);
+        }
     }
 }
