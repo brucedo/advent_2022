@@ -3,29 +3,47 @@ pub mod lib;
 pub mod day1;
 pub mod day2;
 pub mod day3;
+pub mod day4;
 
 use day2::advent::evaluate_tournament;
 use day3::advent::analyze_rucksacks;
+use day4::advent::count_contained_pairs;
 
 use crate::day1::advent::{count_max_calories, sum_top_three_calories};
 use crate::day2::advent::evaluate_tournament_the_second;
+use crate::day3::advent::analyze_badges;
 use crate::lib::lib::to_lines;
 
 fn main() 
 {
+    env_logger::init();
     // advent_day_1();
     // advent_day_2();
-    advent_day_3()
+    // advent_day_3()
+    advent_day_4();
+}
+
+pub fn advent_day_4()
+{
+    let input_data = read_file_to_str("./advent_day_4_1_test");
+    let lines = to_lines(&input_data);
+
+    let (contained_count, overlap_count) = count_contained_pairs(lines);
+
+    println!("The total number of wholly contained pairs is {}, and the number of overlaps is {}", contained_count, overlap_count);
 }
 
 pub fn advent_day_3()
 {
-    env_logger::init();
+    
     let input_data = read_file_to_str("./advent_day_3_1_real");
     let lines = to_lines(&input_data);
-    let priority = analyze_rucksacks(lines);
+    let priority = analyze_rucksacks(&lines);
+
+    let badge_priority = analyze_badges(&lines);
 
     println!("The total priority of the dataset is {}", priority);
+    println!("The badge priority is: {}", badge_priority);
 }
 
 fn read_file_to_str(path: &str) -> String

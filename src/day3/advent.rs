@@ -2,7 +2,61 @@ use std::collections::HashSet;
 
 use log::debug;
 
-pub fn analyze_rucksacks(sacks: Vec<&str> ) -> u64
+pub fn analyze_badges(sacks: &Vec<&str>) -> u64
+{
+    let mut priority: u64 = 0;
+
+
+
+    for i in (0..sacks.len()).step_by(3)
+    {
+        // Stupid hack but why waste time.
+        let group_a = sacks.get(i).unwrap();
+        if group_a.len() == 0
+        {
+            continue;
+        }
+        
+        if i + 2 >= sacks.len()
+        {
+            panic!("The number of sacks is not divisible by 3.");
+        }
+        
+        let group_b = sacks.get(i+1).unwrap();
+        let group_c = sacks.get(i + 2).unwrap();
+
+        let ab_overlap = analyze_compartments(group_a, group_b);
+        let bc_overlap = analyze_compartments(group_b, group_c);
+
+        let badge = find_common_type(ab_overlap, bc_overlap);
+        
+        priority += char_to_num(&badge) as u64;
+    }
+
+    return  priority;
+}
+
+fn find_common_type(ab_overlap: Vec<char>, bc_overlap: Vec<char>) -> char
+{
+    let mut ab_set = HashSet::<char>::new();
+
+    for overlap in ab_overlap
+    {
+        ab_set.insert(overlap);
+    }
+
+    for overlap in bc_overlap
+    {
+        if ab_set.contains(&overlap)
+        {
+            return overlap;
+        }
+    }
+
+    panic!("No overlap between AB and BC.  You trixxed me!");
+}
+
+pub fn analyze_rucksacks(sacks: &Vec<&str> ) -> u64
 {
     let mut running_total: u64 = 0;
 
