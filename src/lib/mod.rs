@@ -36,6 +36,20 @@ pub mod lib
         return lines;
     }
 
+    pub fn to_untrimmed_lines<'a>(file_data: &'a str) -> Vec<&'a str>
+    {
+        let split = file_data.split("\n");
+        // let mut lines = Vec::<&str>::new();
+
+        return split.collect();
+        // for string in split
+        // {
+        //     lines.push(string);
+        // }
+
+        // return lines;
+    }
+
 
     #[cfg(test)]
     mod test
