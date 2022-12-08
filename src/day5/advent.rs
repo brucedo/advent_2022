@@ -1,8 +1,37 @@
+use std::cell::RefCell;
+
 use log::debug;
 
-pub fn stackifier(stack_set: &mut Vec<Vec<&str>>, new_row: &Vec<&str>)
+
+pub fn input_processor(mut lines: Vec<&str>) -> (Vec<&str>, Vec<&str>)
 {
-    if stack_set.len() != new_row.len()
+    let mut spliterator = lines.split(|line| line.is_empty());
+
+    let mut setup = Vec::<&str>::new();
+    let mut commands = Vec::<&str>::new();
+
+    if let Some(setup_lines) = spliterator.next()
+    {
+        for line in setup_lines
+        {
+            setup.push(*line)
+        }
+    }
+    if let Some(command_lines) = spliterator.next()
+    {
+        for line in command_lines
+        {
+            commands.push(*line);
+        }
+    }
+
+    return (setup, commands);
+}
+
+pub fn stackifier<'a>(stack_set: &'a RefCell<Vec<Vec<&'a str>>>, new_row: &'a Vec<&'a str>)
+{
+    let mut mut_stack_set = stack_set.borrow_mut();
+    if mut_stack_set.len() != new_row.len()
     {
         panic!("There should be as many new columns in new_row as there are stacks in stack_set.");
     }
@@ -17,8 +46,13 @@ pub fn stackifier(stack_set: &mut Vec<Vec<&str>>, new_row: &Vec<&str>)
             continue;
         }
 
-        let stack = stack_set.get(i).unwrap();
-        if stack.last()
+        let stack = mut_stack_set.get_mut(i).unwrap();
+        if stack.last().unwrap().trim().is_empty()
+        {
+            panic!("The input is adding a crate above an empty space which is not valid input.");
+        }
+
+        stack.push(new_crate);
 
     }
 }
@@ -66,7 +100,9 @@ pub fn columnizer(row_str: &str) -> Vec<&str>
 #[cfg(test)]
 pub mod tests
 {
-    use crate::day5::advent::{columnizer, stackifier};
+    use std::cell;
+
+    use crate::day5::advent::{columnizer, stackifier, input_processor};
 
     pub fn init()
     {
@@ -74,63 +110,108 @@ pub mod tests
     }
 
     #[test]
+    pub fn given_a_vec_of_only_setup_lines_input_processor_saves_all_lines_to_first_tuple_element()
+    {
+        let input = vec!["        [F] [G]", "    [D] [E] [I]", "[A] [B] [C] [H]", " 1   2   3   4 ", ""];
+
+        let (setup, commands) = input_processor(input);
+        assert_eq!(commands.len(), 0);
+        assert_eq!(setup.len(), 4);
+        assert_eq!(setup.get(3).unwrap(), &" 1   2   3   4 ");
+    }
+
+    #[test]
+    pub fn given_a_vec_of_only_commands_input_processor_saves_all_lines_to_second_tuple_element()
+    {
+        let input = vec!["", "move 1 from 2 to 3", "move 2 from 3 to 4", "move 3 from 4 to 1" ];
+        
+        let (setup, commands) = input_processor(input);
+
+        assert_eq!(commands.len(), 3);
+        assert_eq!(setup.len(), 0);
+        assert_eq!(commands.get(2).unwrap(), &"move 3 from 4 to 1");
+    }
+
+    #[test]
+    pub fn given_a_vec_of_commands_and_setup_input_processor_places_setup_in_first_tuple_element_and_commands_in_second()
+    {
+        let input = vec!["[A] [B] [C] [D]", "", "move 1 from 3 to 4"];
+
+        let (setup, commands) = input_processor(input);
+
+        assert_eq!(commands.len(), 1);
+        assert_eq!(setup.len(), 1);
+        assert_eq!(commands.get(0).unwrap(), &"move 1 from 3 to 4");
+        assert_eq!(setup.get(0).unwrap(), &"[A] [B] [C] [D]");
+    }
+
+    #[test]
     pub fn given_a_fully_empty_vec_of_crates_stackifier_adds_no_crates_to_any_stack()
     {
-        let mut stacks = Vec::<Vec<&str>>::new();
-
-        let mut column1 = Vec::<&str>::new();
-        column1.push("D");
-        stacks.push(column1);
-
-        let mut column2 = Vec::<&str>::new();
-        column2.push("");
-        stacks.push(column2);
-
-        let mut column3 = Vec::<&str>::new();
-        column3.push("A");
-        stacks.push(column3);
-
+        let stacks = cell::RefCell::new(Vec::<Vec<&str>>::new());
         let mut new_row = Vec::<&str>::new();
         new_row.push("");
         new_row.push("");
         new_row.push("");
-        stackifier(&mut stacks, &mut new_row);
 
-        assert_eq!(stacks.len(), 3);
-        assert_eq!(stacks.get(0).unwrap().len(), 1);
-        assert_eq!(stacks.get(1).unwrap().len(), 1);
-        assert_eq!(stacks.get(2).unwrap().len(), 1);
+        {
+            let mut mut_stacks = stacks.borrow_mut();
+            let mut column1 = Vec::<&str>::new();
+            column1.push("D");
+            mut_stacks.push(column1);
+
+            let mut column2 = Vec::<&str>::new();
+            column2.push("");
+            mut_stacks.push(column2);
+
+            let mut column3 = Vec::<&str>::new();
+            column3.push("A");
+            mut_stacks.push(column3);
+
+            
+        }
+        stackifier(&stacks, &mut new_row);
+
+        let immut_stacks = stacks.borrow();
+
+        assert_eq!(immut_stacks.len(), 3);
+        assert_eq!(immut_stacks.get(0).unwrap().len(), 1);
+        assert_eq!(immut_stacks.get(1).unwrap().len(), 1);
+        assert_eq!(immut_stacks.get(2).unwrap().len(), 1);
     }
 
     #[test]
     pub fn given_a_partially_filled_vec_of_crates_stackifier_adds_only_to_stack_where_new_crates_exist()
     {
-        let mut stacks = Vec::<Vec<&str>>::new();
+        let stacks = cell::RefCell::new(Vec::<Vec<&str>>::new());
 
-        let mut column1 = Vec::<&str>::new();
-        column1.push("D");
-        stacks.push(column1);
+        {
+            let mut mut_stacks = stacks.borrow_mut();
+            let mut column1 = Vec::<&str>::new();
+            column1.push("D");
+            mut_stacks.push(column1);
 
-        let mut column2 = Vec::<&str>::new();
-        column2.push("");
-        stacks.push(column2);
+            let mut column2 = Vec::<&str>::new();
+            column2.push("");
+            mut_stacks.push(column2);
 
-        let mut column3 = Vec::<&str>::new();
-        column3.push("A");
-        stacks.push(column3);
+            let mut column3 = Vec::<&str>::new();
+            column3.push("A");
+            mut_stacks.push(column3);
+        }
         
         let mut new_row = Vec::<&str>::new();
         new_row.push("");
         new_row.push("");
         new_row.push("F");
 
-        stackifier(&mut stacks, &mut new_row);
+        stackifier(&stacks, &mut new_row);
         
-        assert_eq!(stacks.len(), 3);
-        assert_eq!(stacks.get(0).unwrap().len(), 1);
-        assert_eq!(stacks.get(1).unwrap().len(), 1);
-        assert_eq!(stacks.get(2).unwrap().len(), 2);
-        assert_eq!(stacks.get(2).unwrap().get(1).unwrap(), &"F");
+        assert_eq!(stacks.borrow().len(), 3);
+        assert_eq!(stacks.borrow().get(0).unwrap().len(), 1);
+        assert_eq!(stacks.borrow().get(1).unwrap().len(), 1);
+        assert_eq!(stacks.borrow().get(2).unwrap().len(), 2);
+        assert_eq!(stacks.borrow().get(2).unwrap().get(1).unwrap(), &"F");
     }
 
     #[test]
