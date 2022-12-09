@@ -1,9 +1,103 @@
-use std::cell::RefCell;
+use std::{cell::RefCell, borrow::Borrow};
 
 use log::debug;
 
 
-pub fn input_processor(mut lines: Vec<&str>) -> (Vec<&str>, Vec<&str>)
+pub fn solver(lines: Vec<&str>) -> String
+{
+    let (mut setup, mut operations) = input_processor(lines);
+
+    // setup's top line is just the numbers at the base of every stack.  pop it and use it to initialize the cargo stack.
+    let stacks_width = stack_width(setup.pop().unwrap());
+    let cargo_stacks = RefCell::new(Vec::<Vec<&str>>::new());
+
+    {
+        let mut mut_cargo_stacks = cargo_stacks.borrow_mut();
+        for _i in 0..stacks_width
+        {
+            mut_cargo_stacks.push(Vec::<&str>::new())
+        }
+    }
+
+    while !setup.is_empty() {stackifier(&cargo_stacks, columnizer(setup.pop().unwrap()))}
+
+    while !operations.is_empty()
+    {
+        let operation = operations.remove(0);
+        let (count, from, to) = translate_operation(operation);
+        move_crates(&cargo_stacks, count, from, to);
+    }
+
+    return get_final_state(&cargo_stacks);
+}
+
+fn get_final_state(cargo_stacks: &RefCell<Vec<Vec<&str>>>) -> String
+{
+    let k = cargo_stacks.borrow();
+    let mut partial = String::from("");
+    for stack in k.as_slice()
+    {
+        partial.push_str(*stack.get(stack.len() - 1).unwrap());
+    }
+
+    return partial;
+}
+
+fn move_crates(cargo_stacks: &RefCell<Vec<Vec<&str>>>, count: u64, from: usize, to: usize)
+{
+    {
+        debug!("Cargo stacks is {} stacks wide.", cargo_stacks.borrow().len());
+        debug!("Attempting to add {} crate(s) to {}, from {}", count, to, from);
+    }
+    let mut mut_cargo_stacks = cargo_stacks.borrow_mut();
+
+    let cargo_from = mut_cargo_stacks.get_mut(from).unwrap();
+    let mut temp = Vec::<&str>::new();
+    for _i in 0..count
+    {
+        temp.push(cargo_from.pop().unwrap());
+        debug!("Removed crate {} from the stack.", temp.get(temp.len() - 1).unwrap());
+    }
+
+
+    let cargo_to = mut_cargo_stacks.get_mut(to).unwrap();
+    while !temp.is_empty()
+    {
+        // cargo_to.push(temp.remove(0));
+        cargo_to.push(temp.pop().unwrap());
+    }
+    
+}
+
+fn stack_width(counter: &str) -> u64
+{
+    let counter_segs = counter.trim().split(" ");
+    let last_num = counter_segs.last().unwrap();
+
+    if let Ok(width) = u64::from_str_radix(last_num, 10)
+    {
+        return width;
+    }
+    else
+    {
+        panic!("The value {} should have been numeric but it is not.", last_num);
+    }
+}
+
+fn translate_operation(operation: &str) -> (u64, usize, usize)
+{
+    let mut op_tokens = operation.split(" ");
+    op_tokens.next(); // move
+    let count = u64::from_str_radix(op_tokens.next().unwrap(), 10).unwrap();
+    op_tokens.next(); // from
+    let from = usize::from_str_radix(op_tokens.next().unwrap(), 10).unwrap() - 1; 
+    op_tokens.next(); // to
+    let to = usize::from_str_radix(op_tokens.next().unwrap(), 10).unwrap() - 1;
+
+    return (count, from, to);
+}
+
+pub fn input_processor(lines: Vec<&str>) -> (Vec<&str>, Vec<&str>)
 {
     let mut spliterator = lines.split(|line| line.is_empty());
 
@@ -28,7 +122,7 @@ pub fn input_processor(mut lines: Vec<&str>) -> (Vec<&str>, Vec<&str>)
     return (setup, commands);
 }
 
-pub fn stackifier<'a>(stack_set: &'a RefCell<Vec<Vec<&'a str>>>, new_row: &'a Vec<&'a str>)
+pub fn stackifier<'a>(stack_set: &'a RefCell<Vec<Vec<&'a str>>>, new_row: Vec<&'a str>)
 {
     let mut mut_stack_set = stack_set.borrow_mut();
     if mut_stack_set.len() != new_row.len()
@@ -36,21 +130,34 @@ pub fn stackifier<'a>(stack_set: &'a RefCell<Vec<Vec<&'a str>>>, new_row: &'a Ve
         panic!("There should be as many new columns in new_row as there are stacks in stack_set.");
     }
 
+    debug!("Adding row: {:?}", new_row);
 
     for i in 0..new_row.len()
     {
         let new_crate = *new_row.get(i).unwrap();
+
+        debug!("Processing crate type {}", new_crate);
         
         if new_crate.trim().is_empty()
         {
             continue;
         }
 
+        debug!("Crate type is not empty.");
+
         let stack = mut_stack_set.get_mut(i).unwrap();
-        if stack.last().unwrap().trim().is_empty()
+
+        if let Some(entry) = stack.last()
         {
-            panic!("The input is adding a crate above an empty space which is not valid input.");
+            if entry.trim().is_empty()
+            {
+                panic!("The input is adding a crate above an empty space which is not valid input.");    
+            }
         }
+        // if stack.last().unwrap().trim().is_empty()
+        // {
+        //     panic!("The input is adding a crate above an empty space which is not valid input.");
+        // }
 
         stack.push(new_crate);
 
@@ -104,9 +211,29 @@ pub mod tests
 
     use crate::day5::advent::{columnizer, stackifier, input_processor};
 
+    use super::{stack_width, translate_operation};
+
     pub fn init()
     {
         let _ = env_logger::builder().is_test(true).try_init();
+    }
+
+    #[test]
+    pub fn given_a_proper_format_translate_operation_returns_a_triple_of_nums()
+    {
+        let string = "move 1 to 2 from 3";
+
+        let result = translate_operation(string);
+
+        assert_eq!(result, (1, 2, 3));
+    }
+
+    #[test]
+    pub fn given_a_space_separated_sequence_of_nums_stack_width_should_give_us_last_num()
+    {
+        let input = "   1     2   3 4  5    6   7  8    9          ";
+
+        assert_eq!(stack_width(input), 9);
     }
 
     #[test]
@@ -170,7 +297,7 @@ pub mod tests
 
             
         }
-        stackifier(&stacks, &mut new_row);
+        stackifier(&stacks, new_row);
 
         let immut_stacks = stacks.borrow();
 
@@ -205,7 +332,7 @@ pub mod tests
         new_row.push("");
         new_row.push("F");
 
-        stackifier(&stacks, &mut new_row);
+        stackifier(&stacks, new_row);
         
         assert_eq!(stacks.borrow().len(), 3);
         assert_eq!(stacks.borrow().get(0).unwrap().len(), 1);

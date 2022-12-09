@@ -9,6 +9,7 @@ pub mod day5;
 use day2::advent::evaluate_tournament;
 use day3::advent::analyze_rucksacks;
 use day4::advent::count_contained_pairs;
+use lib::lib::to_untrimmed_lines;
 
 use crate::day1::advent::{count_max_calories, sum_top_three_calories};
 use crate::day2::advent::evaluate_tournament_the_second;
@@ -21,7 +22,17 @@ fn main()
     // advent_day_1();
     // advent_day_2();
     // advent_day_3()
-    advent_day_4();
+    // advent_day_4();
+    advent_day_5();
+
+}
+
+pub fn advent_day_5()
+{
+    let input_data = read_file_to_str("./advent_day_5_1_real");
+    let lines = to_untrimmed_lines(&input_data);
+
+    println!("last state of crates: {}", day5::advent::solver(lines));
 }
 
 pub fn advent_day_4()
