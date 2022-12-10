@@ -6,6 +6,7 @@ pub mod day3;
 pub mod day4;
 pub mod day5;
 pub mod day6;
+pub mod day7;
 
 use day2::advent::evaluate_tournament;
 use day3::advent::analyze_rucksacks;
