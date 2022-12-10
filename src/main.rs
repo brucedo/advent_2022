@@ -5,10 +5,12 @@ pub mod day2;
 pub mod day3;
 pub mod day4;
 pub mod day5;
+pub mod day6;
 
 use day2::advent::evaluate_tournament;
 use day3::advent::analyze_rucksacks;
 use day4::advent::count_contained_pairs;
+use day6::advent::scan_datastream;
 use lib::lib::to_untrimmed_lines;
 
 use crate::day1::advent::{count_max_calories, sum_top_three_calories};
@@ -23,8 +25,17 @@ fn main()
     // advent_day_2();
     // advent_day_3()
     // advent_day_4();
-    advent_day_5();
+    // advent_day_5();
+    advent_day_6();
 
+}
+
+pub fn advent_day_6()
+{
+    let input_data = read_file_to_str("./advent_day_6_1_real");
+    let end_of_marker = scan_datastream(input_data.trim());
+
+    println!("End of marker: {}", end_of_marker);
 }
 
 pub fn advent_day_5()
