@@ -112,7 +112,16 @@ impl Filesystem
     {
         self.recalculate_size(self.cwd_index);
 
-        
+        let mut cwd = self.directories.get(self.cwd_index).unwrap();
+
+        let mut parent_index = cwd.as_ref().borrow().parent;
+
+        while parent_index.is_some() 
+        {
+            self.recalculate_size(parent_index.unwrap());
+            cwd = self.directories.get(parent_index.unwrap()).unwrap();
+            parent_index = cwd.as_ref().borrow().parent;
+        }
     }
 
     fn recalculate_size(&self, index: usize)
