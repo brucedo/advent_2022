@@ -34,7 +34,82 @@ pub fn part1(input: Vec<&str>)
     seen_coord.sort_unstable();
     seen_coord.dedup_by(|a, b| {debug!("{:?}, {:?} => {}", a, b, a.0 == b.0 && a.1 == b.1); a.0 == b.0 && a.1 == b.1});
 
+    calculate_view(&grid);
+
     debug!("visible coords: {:?}, total count {}", seen_coord, seen_coord.len());
+}
+
+pub fn calculate_view(grid: &Vec<Vec<usize>>) 
+{
+    let mut max_view_score = 0;
+    for row_index in 0..grid.len()
+    {
+        for col_index in 0..grid.len()
+        {
+            let (north_view, south_view) = col_view(grid, row_index, col_index);
+            let (east_view, west_view) = row_view(grid, row_index, col_index);
+            println!("Best view for [{}][{}] is {}N, {}S, {}E, {}W.  Score {}", row_index, col_index, north_view, south_view, east_view, west_view, (north_view * south_view * east_view * west_view));
+            max_view_score = usize::max(max_view_score, north_view * south_view * east_view * west_view)
+        }
+    }
+
+    println!("Max view score: {}", max_view_score);
+}
+
+pub fn row_view(grid: &Vec<Vec<usize>>, row_index: usize, col_index: usize) -> (usize, usize)
+{
+    let mut east_dist = 0;
+    let mut west_dist = 0;
+
+    let highest = grid[row_index][col_index];
+
+    if col_index != 0
+    {
+        for col in (0..col_index).rev()
+        {
+            west_dist += 1;
+            if highest <= grid[row_index][col] { break; }
+        }
+    }
+
+    if col_index < grid[row_index].len()
+    {
+        for col in (col_index + 1)..grid[row_index].len()
+        {
+            east_dist += 1;
+            if highest <= grid[row_index][col] {break;}
+        }
+    }
+
+    return (east_dist, west_dist);
+}
+
+pub fn col_view(grid: &Vec<Vec<usize>>, row_index: usize, col_index: usize) -> (usize, usize)
+{
+    let mut north_dist = 0;
+    let mut south_dist = 0;
+
+    let height = grid[row_index][col_index];
+
+    if row_index != 0
+    {
+        for row in (0..(row_index)).rev()
+        {
+            north_dist += 1;
+            if height <= grid[row][col_index] { break; }
+        }
+    }
+
+    if row_index != grid[row_index].len() - 1
+    {
+        for row in (row_index + 1)..grid[row_index].len()
+        {
+            south_dist += 1;
+            if height <= grid[row][col_index] { break; }
+        }
+    }
+
+    return (north_dist, south_dist);
 }
 
 pub fn break_down_lines(lines: Vec<&str>) -> Vec<Vec<&str>>
