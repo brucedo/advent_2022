@@ -1,5 +1,83 @@
 use std::{cell::RefCell, rc::Rc};
 
+use env_logger::filter;
+use log::{debug, error};
+
+
+pub fn dir_solver(inputs: Vec<&str>)
+{
+
+    let fs = fill_fs(inputs);
+
+    let filtered = fs.breadth_first_filter_size(100000);
+    debug!("finished results: {:?}", filtered);
+
+    let mut sum: usize = 0;
+    for (_name, size) in filtered
+    {
+        sum += size;
+    }
+
+    println!("Sum total is: {}", sum); 
+}
+
+pub fn space_finder(inputs: Vec<&str>)
+{
+    let mut fs = fill_fs(inputs);
+
+    fs.cwd("/");
+    let used = fs.get_cwd().as_ref().borrow().size();
+    let free = 70000000 - used;
+    
+    if free < 30000000
+    {
+        let needed = 30000000 - free;
+        debug!("Space free {}, needed {}", free, needed);
+        let results = fs.breadth_first_filter(|c| c >= needed);
+
+        debug!("matching directories: {:?}", results);
+
+        let mut min = usize::MAX;
+        for (_name, size) in results
+        {
+            min = usize::min(min, size);
+        }
+        
+        println!("Total size of smallest directory that we can remove: {}", min);
+    }
+}
+
+fn fill_fs(inputs: Vec<&str> ) -> Filesystem
+{
+    let mut fs = Filesystem::new();
+    for input in inputs
+    {
+        match Shell::line_processor(input)
+        {
+            LineType::ChangeDirectory(target) => 
+            {
+                fs.cwd(&target)
+            },
+            LineType::List => {},
+            LineType::DirectoryEntry(dir_name) => 
+            {
+                let new_dir = Directory::new(dir_name);
+                fs.create_dir(new_dir);
+            },
+            LineType::FileEntry((name, size)) => 
+            {
+                let file = File {name, size};
+                let dir = fs.get_cwd();
+                dir.as_ref().borrow_mut().add_file(file);
+                fs.update_sizes();
+            },
+            LineType::Noop => {debug!("An empty line has slipped through the inputs.")},
+            LineType::UnknownToken => {error!("A malformed token {} has slipped through the inputs.", input)},
+        }
+    }
+    
+    return fs;
+}
 
 pub struct File
 {
@@ -34,25 +112,6 @@ impl Directory
         return self.name.as_str();
     }
 
-    // fn recalculate_size(&self)
-    // {
-    //     let mut size = 0;
-    //     for child in &self.children
-    //     {
-    //         size += child.borrow().size(); 
-    //     }
-
-    //     for file in &self.files
-    //     {
-    //         size += file.size;
-    //     }
-
-    //     if self.parent.is_some()
-    //     {
-    //         self.parent.as_ref().unwrap().as_ref().borrow().recalculate_size();
-    //     }
-    // }
-
     pub fn add_file(&mut self, file: File)
     {
 
@@ -67,7 +126,6 @@ impl Directory
 pub struct Filesystem
 {
     directories: Vec<Rc<RefCell<Directory>>>,
-    cwd: Rc<RefCell<Directory>>,
     cwd_index: usize
 }
 
@@ -78,7 +136,54 @@ impl Filesystem
         let root = Rc::new(RefCell::new(Directory::new(String::from("/"))));
         let mut dirs = Vec::new();
         dirs.push(root.clone());
-        Filesystem { directories: dirs, cwd: root , cwd_index: 0}
+        Filesystem { directories: dirs, cwd_index: 0}
+    }
+
+    pub fn breadth_first_filter<F>(&self, cmp: F) -> Vec<(String, usize)>
+    where F: Fn(usize) -> bool
+    {
+        let mut to_visit = Vec::<usize>::new();
+        to_visit.push(0);
+        
+        let mut matches = Vec::<(String, usize)>::new();
+
+        while !to_visit.is_empty()
+        {
+            let next = to_visit.remove(0);
+            let dir = self.directories.get(next).unwrap().as_ref().borrow();
+
+            if cmp(dir.size())
+            {
+                matches.push((dir.name.clone(), dir.size))
+            }
+
+            to_visit.extend_from_slice(&dir.children);
+        }
+
+        return matches;
+    }
+
+    pub fn breadth_first_filter_size(&self, max_size: usize) -> Vec<(String, usize)>
+    {
+        let mut to_visit = Vec::<usize>::new();
+        to_visit.push(0);
+        
+        let mut matches = Vec::<(String, usize)>::new();
+
+        while !to_visit.is_empty()
+        {
+            let next = to_visit.remove(0);
+            let dir = self.directories.get(next).unwrap().as_ref().borrow();
+
+            if dir.size <= max_size
+            {
+                matches.push((dir.name.clone(), dir.size))
+            }
+
+            to_visit.extend_from_slice(&dir.children);
+        }
+
+        return matches;
     }
 
     pub fn is_dir(&self, name: &str) -> bool
@@ -189,7 +294,14 @@ impl Filesystem
 
     pub fn get_cwd(&self) -> Rc<RefCell<Directory>>
     {
-        self.cwd.clone()
+        if let Some(cwd) = self.directories.get(self.cwd_index)
+        {
+            cwd.clone()
+        }
+        else
+        {
+            panic!("There is no actual directory entry for the current working directory.");
+        }
     }
 }
 
@@ -321,18 +433,21 @@ pub mod test
     {
         let mut fs = Filesystem::new();
         
-        let a = Directory::new(String::from("a"));
+        let mut a = Directory::new(String::from("a"));
         let mut b = Directory::new(String::from("b"));
 
-        let file = File {name: String::from("filename"), size: 4321};
+        let file_a = File{name: String::from("a_file"), size: 10000};
+        let file_b = File {name: String::from("filename"), size: 4321};
 
         let root_size = fs.get_cwd().borrow().size();
         let a_size = a.size();
         let b_size = b.size();
 
+        a.add_file(file_a);
+
         fs.create_dir(a);
         fs.cwd("a");
-        b.add_file(file);
+        b.add_file(file_b);
         fs.create_dir(b);
 
         fs.cwd("b");
@@ -341,9 +456,9 @@ pub mod test
 
         assert_eq!(b_size + 4321, fs.get_cwd().borrow().size());
         fs.cwd("..");
-        assert_eq!(a_size + 4321, fs.get_cwd().borrow().size());
+        assert_eq!(a_size + 14321, fs.get_cwd().borrow().size());
         fs.cwd("..");
-        assert_eq!(root_size + 4321, fs.get_cwd().borrow().size());
+        assert_eq!(root_size + 14321, fs.get_cwd().borrow().size());
     }
 
     #[test]

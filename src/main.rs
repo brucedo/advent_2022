@@ -12,6 +12,7 @@ use day2::advent::evaluate_tournament;
 use day3::advent::analyze_rucksacks;
 use day4::advent::count_contained_pairs;
 use day6::advent::scan_datastream;
+use day7::advent::{dir_solver, space_finder};
 use lib::lib::to_untrimmed_lines;
 
 use crate::day1::advent::{count_max_calories, sum_top_three_calories};
@@ -27,8 +28,17 @@ fn main()
     // advent_day_3()
     // advent_day_4();
     // advent_day_5();
-    advent_day_6();
+    // advent_day_6();
+    advent_day_7();
+}
 
+pub fn advent_day_7()
+{
+    let input_data = read_file_to_str("./advent_day_7_1_real");
+    let lines = to_lines(&input_data);
+
+    // dir_solver(lines);
+    space_finder(lines);
 }
 
 pub fn advent_day_6()
