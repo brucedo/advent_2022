@@ -1,6 +1,5 @@
 use std::{cell::RefCell, rc::Rc};
 
-use env_logger::filter;
 use log::{debug, error};
 
 
@@ -524,7 +523,7 @@ pub mod test
 
         match Shell::line_processor(line)
         {
-            LineType::FileEntry((file_name, file_size)) => {},
+            LineType::FileEntry((_file_name, _file_size)) => {},
             _ => {panic!("The wrong LineType was returned.  Should have received ChangeDirectory token.")}
         }
     }
