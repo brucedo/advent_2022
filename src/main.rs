@@ -9,12 +9,14 @@ pub mod day6;
 pub mod day7;
 pub mod day8;
 pub mod day9;
+pub mod day10;
 
+use day10::advent::execute;
 use day2::advent::evaluate_tournament;
 use day3::advent::analyze_rucksacks;
 use day4::advent::count_contained_pairs;
 use day6::advent::scan_datastream;
-use day7::advent::{dir_solver, space_finder};
+use day7::advent::{space_finder};
 use day8::advent::part1;
 use day9::advent::solve_day_9;
 use lib::lib::to_untrimmed_lines;
@@ -35,12 +37,21 @@ fn main()
     // advent_day_6();
     // advent_day_7();
     // advent_day_8();
-    advent_day_9()
+    // advent_day_9()
+    advent_day_10();
+}
+
+pub fn advent_day_10()
+{
+    let input_data = read_file_to_str("./advent_day_10_real");
+    let lines = to_lines(&input_data);
+
+    execute(lines);
 }
 
 pub fn advent_day_9()
 {
-    let input_data = read_file_to_str("./advent_day_9_real");
+    let input_data = read_file_to_str("./advent_day_9_test");
     let lines = to_lines(&input_data);
 
     solve_day_9(lines);

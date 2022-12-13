@@ -3,8 +3,10 @@
 pub fn solve_day_9(input: Vec<&str>)
 {
     let mut instructions = Vec::<Movement>::with_capacity(input.len());
-    let mut tail_moves = Vec::<(i32, i32)>::new();
+    let mut tail_moves1 = Vec::<(i32, i32)>::new();
+    let mut tail_moves2 =Vec::<(i32, i32)>::new();
 
+    let mut knots = vec![(0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0)];
     
     for line in input
     {
@@ -13,7 +15,8 @@ pub fn solve_day_9(input: Vec<&str>)
 
     let mut head = (0, 0);
     let mut tail = (0, 0);
-    tail_moves.push(tail);
+    tail_moves1.push(tail);
+    tail_moves2.push(tail);
 
     for instruction in instructions
     {
@@ -21,28 +24,101 @@ pub fn solve_day_9(input: Vec<&str>)
         {
             Movement::Left(count) => 
             {
-                tail_moves.append(&mut move_x(-1, count, &mut head, &mut tail));
+                tail_moves1.append(&mut move_x(-1, count, &mut head, &mut tail));
+                tail_moves2.append(&mut move_x2(-1, count, &mut knots));
             },
             Movement::Right(count) => 
             {
-                tail_moves.append(&mut move_x(1, count, &mut head, &mut tail));
+                tail_moves1.append(&mut move_x(1, count, &mut head, &mut tail));
+                tail_moves2.append(&mut move_x2(1, count, &mut knots));
             },
             Movement::Up(count) => 
             {
-                tail_moves.append(&mut move_y(1, count, &mut head, &mut tail));
+                tail_moves1.append(&mut move_y(1, count, &mut head, &mut tail));
+                tail_moves2.append(&mut move_y2(1, count, &mut knots));
             },
             Movement::Down(count) => 
             {
-                tail_moves.append(&mut move_y(-1, count, &mut head, &mut tail));
+                tail_moves1.append(&mut move_y(-1, count, &mut head, &mut tail));
+                tail_moves2.append(&mut move_y2(-1, count, &mut knots));
             },
             Movement::Unknown => {},
         }
     }
 
-    println!("The tail should have visited a total of {} spaces, some repeatedly: {:?}", tail_moves.len(), tail_moves);
-    tail_moves.sort_unstable();
-    tail_moves.dedup();
-    println!("The tail has occupied {} unique spaces after dedup: {:?}", tail_moves.len(), tail_moves);
+    println!("The tail should have visited a total of {} spaces, some repeatedly: {:?}", tail_moves1.len(), tail_moves1);
+    tail_moves1.sort_unstable();
+    tail_moves1.dedup();
+    println!("The tail has occupied {} unique spaces after dedup: {:?}", tail_moves1.len(), tail_moves1);
+
+    println!("The tail in the set of 10 knots should have visited a total of {} spaces, some repeatedly: {:?}", tail_moves2.len(), tail_moves2);
+    tail_moves2.sort_unstable();
+    tail_moves2.dedup();
+    println!("The tail in the set of 10 knots has occupied {} unique spaces after dedup.", tail_moves2.len())
+}
+
+fn move_x2(offset:i32, count: usize, knots: &mut Vec<(i32, i32)>) -> Vec<(i32, i32)>
+{
+    let mut tail_moves = Vec::new();
+
+    for _i in 0..count
+    {
+        knots[0].0 += offset;
+        let orig_tail = knots[knots.len() - 1];
+        for head_index in 0..knots.len() - 1
+        {
+            let mut head = knots[head_index];
+            let mut tail = knots[head_index + 1];
+
+            match adjust_tail(&mut head, &mut tail)
+            {
+                Some(new_tail) => {tail = new_tail},
+                None => {break;}
+            }
+
+            knots[head_index] = head;
+            knots[head_index + 1] = tail;
+        }
+
+        if orig_tail != knots[knots.len() - 1]
+        {
+            tail_moves.push(knots[knots.len() - 1])
+        }
+    }
+
+    return tail_moves;
+}
+
+fn move_y2(offset:i32, count: usize, knots: &mut Vec<(i32, i32)>) -> Vec<(i32, i32)>
+{
+    let mut tail_moves = Vec::new();
+
+    for _i in 0..count
+    {
+        knots[0].1 += offset;
+        let orig_tail = knots[knots.len() - 1];
+        for head_index in 0..knots.len() - 1
+        {
+            let mut head = knots[head_index];
+            let mut tail = knots[head_index + 1];
+
+            match adjust_tail(&mut head, &mut tail)
+            {
+                Some(new_tail) => {tail = new_tail},
+                None => {break;}
+            }
+
+            knots[head_index] = head;
+            knots[head_index + 1] = tail;
+        }
+
+        if orig_tail != knots[knots.len() - 1]
+        {
+            tail_moves.push(knots[knots.len() - 1])
+        }
+    }
+
+    return tail_moves;
 }
 
 fn move_x(offset: i32, count: usize, head: &mut (i32, i32), tail: &mut(i32, i32)) -> Vec<(i32, i32)>
