@@ -13,6 +13,7 @@ pub mod day10;
 pub mod day11;
 
 use day10::advent::execute;
+use day11::advent::monkey_business;
 use day2::advent::evaluate_tournament;
 use day3::advent::analyze_rucksacks;
 use day4::advent::count_contained_pairs;
@@ -39,7 +40,15 @@ fn main()
     // advent_day_7();
     // advent_day_8();
     // advent_day_9()
-    advent_day_10();
+    advent_day_11();
+}
+
+pub fn advent_day_11()
+{
+    let input_data = read_file_to_str("./advent_day_11_test");
+    let lines = to_lines(&input_data);
+
+    monkey_business(lines);    
 }
 
 pub fn advent_day_10()
