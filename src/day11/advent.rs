@@ -1,3 +1,5 @@
+use std::collections::VecDeque;
+
 
 
 pub fn construct_operation(op: Operation) -> Box<dyn Fn(i32) -> i32>
@@ -54,23 +56,118 @@ pub enum Operation
 
 pub struct Monkey
 {
-    items: Vec<i32>,
+    items: VecDeque<i32>,
     action: Box<dyn Fn(i32) -> i32>,
     test: Box<dyn Fn(i32) -> bool>,
     true_target: usize,
     false_target: usize,
 }
 
+impl Monkey
+{
+    pub fn inspect_relieve_throw(&mut self) -> Option<(usize, i32)>
+    {
+        let next = self.items.pop_front()?;
+
+        let post_worry = self.action.as_ref()(next);
+        let post_relief = post_worry / 3;
+        match self.test.as_mut()(post_relief) 
+        {
+            true => {return Some((self.true_target, post_relief))},
+            false => {return Some((self.false_target, post_relief))},
+        }
+    }
+}
+
 
 #[cfg(test)]
 pub mod tests
 {
+    use std::collections::VecDeque;
+
     use super::{Monkey, construct_operation, Operation, construct_test};
 
     #[test]
     pub fn after_a_monkey_tests_your_worry_level_it_will_remove_the_item_from_its_list_and_return_it_and_the_receiving_monkeys_index_as_a_tuple()
     {
+        let mut monkey0 = Monkey
+        { 
+            items: VecDeque::from(vec![10]), 
+            action: construct_operation(Operation::Multiply(Some(9))), 
+            test: construct_test(5), 
+            true_target: 5, 
+            false_target: 3 
+        };
+
+        if let Some((index, worry)) = monkey0.inspect_relieve_throw()
+        {
+            assert_eq!(index, 5);
+            assert_eq!(worry, 30);
+        }
+        else 
+        {
+            panic!("inspect_relieve_throw returned None, some was expected.")
+        }
+    }
+
+    #[test] 
+    pub fn a_monkey_returns_the_false_index_if_the_test_does_not_evenly_divide_the_worry_level()
+    {
+        let mut monkey0 = Monkey
+        {
+            items: VecDeque::from(vec![3]),
+            action: construct_operation(Operation::Add(Some(12))),
+            test: construct_test(12),
+            true_target: 1,
+            false_target: 2
+        };
+
+        if let Some((index, _worry)) = monkey0.inspect_relieve_throw()
+        {
+            assert_eq!(index, 2);
+        }
+        else
+        {
+            panic!("inspect_relieve_throw returned None, some was expected.")
+        }
+    }
+
+    #[test]
+    pub fn the_relief_divides_worry_by_three_and_takes_the_floor_of_the_result()
+    {
+        let mut monkey = Monkey
+        {
+            items: VecDeque::from(vec![5]),
+            action: construct_operation(Operation::Add(Some(6))),
+            test: construct_test(2),
+            true_target: 1,
+            false_target: 2
+        };
+
+        if let Some((_index, worry)) = monkey.inspect_relieve_throw()
+        {
+            assert_eq!(worry, 3);
+        }
+        else
+        {
+            panic!("inspect_relieve_throw returned None, some was expected.")
+        }
         
+    }
+
+    #[test]
+    pub fn if_a_monkey_has_no_items_left_inspect_relieve_throw_returns_none()
+    {
+        let mut monkey = Monkey
+        {
+            items: VecDeque::from(vec![]),
+            action: construct_operation(Operation::Add(Some(100))),
+            test: construct_test(12),
+            true_target: 0,
+            false_target: 1
+        };
+
+        assert!(monkey.inspect_relieve_throw().is_none());
     }
 
     #[test]
