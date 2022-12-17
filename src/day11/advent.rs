@@ -9,7 +9,7 @@ pub fn monkey_business(lines: Vec<&str>)
     {
         for j in 0..monkeys.len()
         {
-            let mut throws = Vec::<(usize, i128)>::new();
+            let mut throws = Vec::<(usize, i32)>::new();
             {
                 let monkey = &mut monkeys[j];
                 while let Some(throw) = monkey.inspect_relieve_throw()
@@ -61,9 +61,8 @@ pub fn monkeyfi(lines: Vec<&str>) -> Vec<Monkey>
     return monkeys;
 }
 
-fn make_monkey(record: Vec<&str>) -> Monkey
+pub fn make_monkey(record: Vec<&str>) -> Monkey
 {
-
 
     let mut lines = record.iter();
     
@@ -78,7 +77,7 @@ fn make_monkey(record: Vec<&str>) -> Monkey
     return Monkey { items, action, test, true_target, false_target, inspect_count: 0 }
 }
 
-fn decode_target(target_line: &str) -> usize
+pub fn decode_target(target_line: &str) -> usize
 {
     
     if !(target_line.starts_with("If true: throw to monkey ") || target_line.starts_with("If false: throw to monkey "))
@@ -96,19 +95,19 @@ fn decode_target(target_line: &str) -> usize
     }
 }
 
-fn make_test(test_line: &str) -> Box<dyn Fn(i128) -> bool>
+pub fn make_test(test_line: &str) -> Box<dyn Fn(i32) -> bool>
 {
     if !test_line.starts_with("Test:")
     {
         panic!("Bad input line for test builder: {}", test_line);
     }
 
-    let divisor = i128::from_str_radix(test_line.strip_prefix("Test: divisible by ").unwrap(), 10).unwrap();
+    let divisor = i32::from_str_radix(test_line.strip_prefix("Test: divisible by ").unwrap(), 10).unwrap();
 
     return construct_test(divisor);
 }
 
-fn make_operation(operation_line: &str) -> Box<dyn Fn(i128) -> i128>
+pub fn make_operation(operation_line: &str) -> Box<dyn Fn(i32) -> i32>
 {
     if !operation_line.starts_with("Operation:")
     {
@@ -119,16 +118,16 @@ fn make_operation(operation_line: &str) -> Box<dyn Fn(i128) -> i128>
     let mut tokens = tail.trim().split(" ");
     let (_new, _equals, operand1, operator, operand2) = 
         (tokens.next().unwrap(), tokens.next().unwrap(), tokens.next().unwrap(), tokens.next().unwrap(), tokens.next().unwrap());
-    let mut operand: Option<i128> = None;
+    let mut operand: Option<i32> = None;
     let operation: Operation;
 
     if operand1 != "old"
     {
-        operand = Some(i128::from_str_radix(operand1, 10).unwrap());
+        operand = Some(i32::from_str_radix(operand1, 10).unwrap());
     }
     else if operand2 != "old"
     {
-        operand = Some(i128::from_str_radix(operand2, 10).unwrap());
+        operand = Some(i32::from_str_radix(operand2, 10).unwrap());
     }
     
     match operator 
@@ -143,7 +142,7 @@ fn make_operation(operation_line: &str) -> Box<dyn Fn(i128) -> i128>
     return construct_operation(operation);
 }
 
-fn starting_items(start_items_line: &str) -> VecDeque<i128>
+pub fn starting_items(start_items_line: &str) -> VecDeque<i32>
 {
     let mut items = VecDeque::new();
     if !start_items_line.starts_with("Starting items:")
@@ -151,19 +150,19 @@ fn starting_items(start_items_line: &str) -> VecDeque<i128>
         panic!("Bad input for starting items builder: {}.", start_items_line);
     }
 
-    let mut tail = start_items_line.strip_prefix("Starting items:").unwrap();
+    let tail = start_items_line.strip_prefix("Starting items:").unwrap();
     for item in tail.split(",")
     {
         if !item.trim().is_empty()
         {
-            items.push_back(i128::from_str_radix(item.trim(), 10).unwrap());
+            items.push_back(i32::from_str_radix(item.trim(), 10).unwrap());
         }
     }
 
     return items;
 }
 
-fn recordify(lines: Vec<&str>) -> Vec<Vec<&str>>
+pub fn recordify(lines: Vec<&str>) -> Vec<Vec<&str>>
 {
     let mut records = Vec::<Vec<&str>>::new();
     let mut record = Vec::<&str>::new();
@@ -190,7 +189,7 @@ fn recordify(lines: Vec<&str>) -> Vec<Vec<&str>>
 }
 
 
-pub fn construct_operation(op: Operation) -> Box<dyn Fn(i128) -> i128>
+pub fn construct_operation(op: Operation) -> Box<dyn Fn(i32) -> i32>
 {
     match op 
     {
@@ -229,24 +228,24 @@ pub fn construct_operation(op: Operation) -> Box<dyn Fn(i128) -> i128>
     }
 }
 
-pub fn construct_test(divisor: i128) -> Box<dyn Fn(i128) -> bool>
+pub fn construct_test(divisor: i32) -> Box<dyn Fn(i32) -> bool>
 {
     Box::new(move |dividend| (dividend % divisor) == 0)
 }
 
 pub enum Operation
 {
-    Multiply(Option<i128>),
-    Divide(Option<i128>),
-    Subtract(Option<i128>),
-    Add(Option<i128>),
+    Multiply(Option<i32>),
+    Divide(Option<i32>),
+    Subtract(Option<i32>),
+    Add(Option<i32>),
 }
 
 pub struct Monkey
 {
-    items: VecDeque<i128>,
-    action: Box<dyn Fn(i128) -> i128>,
-    test: Box<dyn Fn(i128) -> bool>,
+    items: VecDeque<i32>,
+    action: Box<dyn Fn(i32) -> i32>,
+    test: Box<dyn Fn(i32) -> bool>,
     true_target: usize,
     false_target: usize,
     inspect_count: usize,
@@ -254,7 +253,7 @@ pub struct Monkey
 
 impl Monkey
 {
-    pub fn inspect_relieve_throw(&mut self) -> Option<(usize, i128)>
+    pub fn inspect_relieve_throw(&mut self) -> Option<(usize, i32)>
     {
         let next = self.items.pop_front()?;
 
