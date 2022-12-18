@@ -209,6 +209,10 @@ pub fn construct_operation(op: Operation) -> Box<dyn Fn(i32) -> i32>
                 None => {Box::new(|operand1| operand1 / operand1)}
             }
         },
+        Operation::Modulus(operand) =>
+        {
+            Box::new(move |operand1| operand1 % operand)
+        }
         Operation::Subtract(opt) => 
         {
             match opt 
@@ -237,6 +241,7 @@ pub enum Operation
 {
     Multiply(Option<i32>),
     Divide(Option<i32>),
+    Modulus(i32),
     Subtract(Option<i32>),
     Add(Option<i32>),
 }
