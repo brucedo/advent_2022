@@ -11,10 +11,12 @@ pub mod day8;
 pub mod day9;
 pub mod day10;
 pub mod day11;
+pub mod day12;
 
 use day10::advent::execute;
 use day11::advent::monkey_business;
 use day11::part2::solver;
+use day12::advent::solver_day12;
 use day2::advent::evaluate_tournament;
 use day3::advent::analyze_rucksacks;
 use day4::advent::count_contained_pairs;
@@ -41,7 +43,16 @@ fn main()
     // advent_day_7();
     // advent_day_8();
     // advent_day_9()
-    advent_day_11();
+    // advent_day_11();
+    advent_day_12()
+}
+
+pub fn advent_day_12()
+{
+    let input_data = read_file_to_str("./advent_day_12_real");
+    let lines = to_lines(&input_data);
+
+    solver_day12(lines);
 }
 
 pub fn advent_day_11()
