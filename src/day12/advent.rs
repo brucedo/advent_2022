@@ -20,7 +20,9 @@ pub fn solver_day12(lines: Vec<&str>)
     println!("{:?}", start);
     println!("{:?}", end);
 
-    // djikstra(&mut map, start, end);
+    djikstra(&mut map, start, end);
+
+    debug!("************************* COMPLETED PART 1 PASS *************************");
 
     // part 2
     let mut start_points = Vec::<(usize, usize)>::new();
@@ -36,18 +38,35 @@ pub fn solver_day12(lines: Vec<&str>)
         }
     }
 
+    debug!("************************* FOUND ALL START POINTS *************************");
+    debug!("{:?}", start_points);
+
     for start_point in start_points
     {
+        debug!("************************* RESETTING MAP FOR POINT {},{} *************************", start_point.0, start_point.1);
         reset_map(&mut map, start_point);
-        dists.push(djikstra(&mut map, start_point, end));
+        debug!("************************* RUNNING DJISKTRA FOR POINT {},{} *************************", start_point.0, start_point.1);
+        if let Some(distance) = djikstra(&mut map, start_point, end)
+        {
+            dists.push(distance);
+        }
+        else
+        {
+            println!("The point ({},{}) has no path to the end ({},{})", start_point.0, start_point.1, end.0, end.1);
+        }
+        
     }
 
     println!("Distances: ");
-    for dist in dists
+    for dist in &dists
     {
         print!("{:>5}", dist);
     }
     println!();
+
+    dists.sort_unstable();
+
+    println!("Shortest/longest distance: {}/{}", dists[0], dists[dists.len() - 1]);
 }
 
 fn reset_map(map: &mut Vec<Vec<Node>>, start: (usize, usize))
@@ -119,7 +138,7 @@ fn build_map(lines: Vec<&str>) -> (Vec<Vec<Node>>, (usize, usize), (usize, usize
     return (map, (start_row, start_col), (end_row, end_col));
 }
 
-fn djikstra(map: &mut Vec<Vec<Node>>, start: (usize, usize), end: (usize, usize)) -> usize
+fn djikstra(map: &mut Vec<Vec<Node>>, start: (usize, usize), end: (usize, usize)) -> Option<usize>
 {
     let mut pqueue = BinaryHeap::<NodeOrder>::new();
     let total_distance: u32;
@@ -130,16 +149,32 @@ fn djikstra(map: &mut Vec<Vec<Node>>, start: (usize, usize), end: (usize, usize)
 
     loop
     {
-        let next = pqueue.pop().unwrap();
+        let next: NodeOrder;
+        
+        if let Some(next_opt) = pqueue.pop()
+        {
+            next = next_opt;
+        }
+        else
+        {
+            return None;
+        }
+
         let mut index = next.index;
 
         debug!("Looking at index {},{}", index.0, index.1);
 
         while map[index.0][index.1].visited
         {
-            let next = pqueue.pop().unwrap();
-            index = next.index;
-            debug!("Looking at index {},{}", index.0, index.1);
+            if let Some(next) = pqueue.pop()
+            {
+                index = next.index;
+                debug!("Looking at index {},{}", index.0, index.1);
+            }
+            else
+            {
+                return None;
+            }
         }
 
         // neighbor indices
@@ -190,7 +225,7 @@ fn djikstra(map: &mut Vec<Vec<Node>>, start: (usize, usize), end: (usize, usize)
     }
 
     println!("Total risk: {}", total_distance);
-    return total_distance as usize;
+    return Some(total_distance as usize);
 }
 
 fn build_neighbors(index: (usize, usize), map: &Vec<Vec<Node>>) -> Vec<(usize, usize)>
