@@ -12,6 +12,7 @@ pub mod day9;
 pub mod day10;
 pub mod day11;
 pub mod day12;
+pub mod day13;
 
 use day10::advent::execute;
 use day11::advent::monkey_business;
