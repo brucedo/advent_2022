@@ -18,6 +18,7 @@ use day10::advent::execute;
 use day11::advent::monkey_business;
 use day11::part2::solver;
 use day12::advent::solver_day12;
+use day13::advent::solve_day_13;
 use day2::advent::evaluate_tournament;
 use day3::advent::analyze_rucksacks;
 use day4::advent::count_contained_pairs;
@@ -45,7 +46,16 @@ fn main()
     // advent_day_8();
     // advent_day_9()
     // advent_day_11();
-    advent_day_12()
+    // advent_day_12()
+    advent_day_13()
+}
+
+pub fn advent_day_13()
+{
+    let input_data = read_file_to_str("./advent_day_13_real");
+    let lines = to_lines(&input_data);
+
+    solve_day_13(lines);
 }
 
 pub fn advent_day_12()
