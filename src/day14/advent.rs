@@ -3,7 +3,35 @@ use log::debug;
 
 pub struct Cave
 {
-    grid: Vec<Vec<u8>>
+    grid: Vec<Vec<u8>>,
+    max_y: usize,
+    floor: usize,
+}
+
+pub fn solve_day_14_2(lines: Vec<&str>)
+{
+    let paths = paths(lines);
+
+    let mut max_x = usize::MIN;
+    let mut max_y = usize::MIN;
+
+    for path in &paths
+    {
+        let new_maxes = find_max(path);
+        max_x = std::cmp::max(new_maxes.0, max_x);
+        max_y = std::cmp::max(new_maxes.1, max_y);
+    }
+
+    let mut cave = Cave::new(max_x, max_y);
+
+    for path in &paths
+    {
+        cave.fill_rock_path(path);
+    }
+
+    let blocked_units = calculate_infinite_sandfall(&mut cave);
+
+    println!("The number of units that get blocked and come to rest are {}", blocked_units);
 }
 
 pub fn solve_day_14_1(lines: Vec<&str>)
@@ -30,6 +58,43 @@ pub fn solve_day_14_1(lines: Vec<&str>)
     let blocked_units = calculate_sandfall(&mut cave);
 
     println!("The number of units that get blocked and come to rest are {}", blocked_units);
+}
+
+fn calculate_infinite_sandfall(cave: &mut Cave) -> usize
+{
+    let mut sand_count = 0;
+    let mut curr_pos = (500, 0);
+    loop 
+    {
+        debug!("Current position ({},{}) vs. cave dimensions {} x {}", curr_pos.0, curr_pos.1, cave.width(), cave.depth());
+        
+        if !cave.is_blocked((curr_pos.0, curr_pos.1 + 1))
+        {
+            curr_pos = (curr_pos.0, curr_pos.1 + 1);
+        }
+        else if !cave.is_blocked((curr_pos.0 - 1, curr_pos.1 + 1))
+        {
+            curr_pos = (curr_pos.0 - 1, curr_pos.1 + 1);
+        }
+        else if !cave.is_blocked((curr_pos.0 + 1, curr_pos.1 + 1))
+        {
+            curr_pos = (curr_pos.0 + 1, curr_pos.1 + 1);
+        }
+        else
+        {
+            cave.fill_with_sand(curr_pos);
+            sand_count += 1;
+
+            if curr_pos.0 == 500 && curr_pos.1 == 0
+            {
+                break;
+            }
+
+            curr_pos = (500,0);
+        }
+    }
+
+    return sand_count
 }
 
 fn calculate_sandfall(cave: &mut Cave) -> usize
@@ -89,10 +154,10 @@ impl Cave
     {
         let mut grid = Vec::new();
 
-        for _x in 0..max_path_x + 1
+        for _x in 0..max_path_x + 2
         {
             let mut col = Vec::<u8>::new();
-            for _y in 0..max_path_y + 1
+            for _y in 0..max_path_y + 2
             {
                 col.push(0)
             }
@@ -100,7 +165,18 @@ impl Cave
             grid.push(col);
         }
         
-        Cave { grid }
+        Cave { grid, max_y: usize::MIN, floor: 0 }
+    }
+
+    pub fn expand_x(&mut self)
+    {
+        let mut col = Vec::<u8>::new();
+        for _y in 0..self.max_y + 2
+        {
+            col.push(0);
+        }
+
+        self.grid.push(col);
     }
 
     pub fn width(&self) -> usize
@@ -120,6 +196,11 @@ impl Cave
 
     pub fn fill_with_sand(&mut self, coord: (usize, usize))
     {
+        if coord.0 >= self.grid.len()
+        {
+            self.expand_x();
+        }
+
         self.grid[coord.0][coord.1] = 2;
     }
 
@@ -141,13 +222,31 @@ impl Cave
                 self.fill_vertical(start, end);
             }
 
+            if self.max_y < end.1 { self.max_y = end.1; }
+            if self.max_y < start.1 { self.max_y = start.1; }
+
             start = end;
         }
     }
 
-    pub fn is_blocked(&self, coord: (usize, usize)) -> bool
+    pub fn is_blocked(&mut self, coord: (usize, usize)) -> bool
     {
-        self.grid[coord.0][coord.1] != 0
+
+        debug!("Coordinate testing: ({},{})", coord.0, coord.1);
+
+        if coord.0 >= self.grid.len()
+        {
+            self.expand_x();
+        }
+
+        if coord.1 == self.max_y + 2
+        {
+            true
+        }
+        else
+        {
+            self.grid[coord.0][coord.1] != 0
+        }
     }
 
     fn fill_horizontal(&mut self, start: &(usize, usize), end: &(usize, usize))
