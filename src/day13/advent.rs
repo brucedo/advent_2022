@@ -1,6 +1,39 @@
 
 use std::{collections::HashMap, cmp::Ordering};
 
+pub fn solve_day_13_2(lines: Vec<&str>)
+{
+    let pairs = break_lines_into_pairs(lines);
+    let mut lines = Vec::<List>::new();
+
+    for (left_str, right_str) in pairs
+    {
+        lines.push(build_list(left_str));
+        lines.push(build_list(right_str));
+    }
+
+    // add divider packets
+    lines.push(build_list("[[2]]"));
+    lines.push(build_list("[[6]]"));
+
+    lines.sort_by(safe_compare_lists);
+
+    let mut index:usize = 1;
+    let mut score:usize = 1;
+    let divider_2 = build_list("[[2]]");
+    let divider_6 = build_list("[[6]]");
+    for line in lines
+    {
+        if safe_compare_lists(&line, &divider_2) == Ordering::Equal || safe_compare_lists(&line, &divider_6) == Ordering::Equal
+        {
+            println!("Found one match at index {} with line {:?}", index, line);
+            score *= index;
+        }
+        index += 1;
+    }
+
+    println!("Final score: {}", score);
+}
 
 pub fn solve_day_13(lines: Vec<&str>)
 {
@@ -55,7 +88,7 @@ fn break_lines_into_pairs(lines: Vec<&str>) -> Vec<(&str, &str)>
     return pairs;
 }
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Clone, Debug)]
 pub struct List
 {
     lists: HashMap<usize, List>,
@@ -154,6 +187,14 @@ pub fn compare_lists(left: List, right: List) -> bool
         _ => {false}
     }
 
+}
+
+fn safe_compare_lists(left: &List, right: &List) -> Ordering
+{
+    let destroyable_left = left.clone();
+    let destroyable_right = right.clone();
+
+    return recursive_compare_lists(destroyable_left, destroyable_right);
 }
 
 fn recursive_compare_lists(mut left: List, mut right: List) -> Ordering
